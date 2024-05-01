@@ -74,7 +74,7 @@ function moveDeathstar(deathstar) {
       }
     }, dsSpeed);
   }
-  moveDsDown(moveDsUp);
+  moveDsDown();
 }
 
 function controlXwing(xwing) {
@@ -99,15 +99,8 @@ function controlXwing(xwing) {
     xWingState.left = positionToNumber(xStyle.left);
   }
 
-  function playerShoot() {
-    const playerShot = appendElement(root, 'img', 'shot', null, {src: './images/shot.png'});
-    const deathStar = document.getElementById('deathstar');
-    const shotStyle = playerShot.style;
-    shotStyle.position = 'absolute';
-    shotStyle.width = '10px';
-    shotStyle.top = xWingState.top + 44 + 'px';
-    shotStyle.left = xWingState.left + 50 + 'px';
-    const interval = setInterval(() => {
+  function hitDeathStar(deathStar, playerShot, shotStyle) {
+    if (deathStar) {
       if (
         positionToNumber(shotStyle.left) > window.innerWidth - 160 && 
         positionToNumber(shotStyle.left) < window.innerWidth - 130 && 
@@ -138,9 +131,44 @@ function controlXwing(xwing) {
           }, 5000)
         }
       }
+    }
+  }
+
+  function playerShoot() {
+    const playerShot = appendElement(root, 'img', 'shot', null, {src: './images/shot.png'});
+    const deathStar = document.getElementById('deathstar');
+    const shotStyle = playerShot.style;
+    shotStyle.position = 'absolute';
+    shotStyle.width = '10px';
+    shotStyle.top = xWingState.top + 44 + 'px';
+    shotStyle.left = xWingState.left + 50 + 'px';
+    const interval = setInterval(() => {
+      hitDeathStar(deathStar, playerShot, shotStyle);
+
+      const tieElements = Array.from(document.querySelectorAll('.tie'));
+      tieElements.forEach((tie) => {
+        if (positionToNumber(tie.style.top) < positionToNumber(shotStyle.top) + 10 &&
+            positionToNumber(tie.style.top) > positionToNumber(shotStyle.top) - 30 &&
+            positionToNumber(tie.style.left) < positionToNumber(shotStyle.left) + 20 &&
+            positionToNumber(tie.style.left) > positionToNumber(shotStyle.left) - 20 &&
+            tie.id !== 'deadTie'
+          ) {
+          tie.src = './images/explosion.gif';
+          tie.id = 'deadTie'
+          setTimeout(() => {
+            playerShot.remove();
+          }, 10);
+          setTimeout(() => {
+            tie.remove();
+          }, 300);
+        }
+      })
+
       shotStyle.left = positionToNumber(shotStyle.left) + 20 + 'px';
-      positionToNumber(shotStyle.left) > window.innerWidth - 7 ? (playerShot.remove(), clearInterval(interval)) : null;
+      positionToNumber(shotStyle.left) > window.innerWidth - 10 ? (playerShot.remove(), clearInterval(interval)) : null;
     }, 20)
+
+    
   }
 
   function handleKeyPress() {
@@ -198,11 +226,44 @@ function controlXwing(xwing) {
   window.addEventListener('keyup', handleKeyUp);
 }
 
+function createTieFighter() {
+  const tie = appendElement(root, 'img', 'tie', null, {src: './images/TIEfighter.png', id: 'tie'});
+  tie.style.position = 'absolute';
+  tie.style.left = window.innerWidth - 100 + 'px';
+  function moveTieDown() {
+    const down = setInterval(() => {
+      tie.style.top = positionToNumber(tie.style.top) + 1 + 'px';
+      tie.style.left = positionToNumber(tie.style.left) - 0.5 + 'px';
+      positionToNumber(tie.style.top) > window.innerHeight - 50 ? (clearInterval(down), moveTieUp()) : null;
+      positionToNumber(tie.style.left) < 0 ? tie.remove() : null
+    }, 10)
+  }
+  function moveTieUp() {
+    const up = setInterval(() => {
+      tie.style.top = positionToNumber(tie.style.top) - 1 + 'px';
+      tie.style.left = positionToNumber(tie.style.left) - 0.5 + 'px';
+      positionToNumber(tie.style.top) < 10 ? (clearInterval(up), moveTieDown()) : null;
+      positionToNumber(tie.style.left) < 0 ? tie.remove() : null
+    }, 10)
+  }
+  moveTieDown();
+}
+
+function createTieFighters() {
+  let counter = 0
+  const interval = setInterval(() => {
+    counter++;
+    createTieFighter();
+    counter === 30 ? clearInterval(interval) : null
+  }, 1000)
+}
+
 function main() {
   const root = document.getElementById('root');
   const xwing = appendElement(root, 'img', 'xWing', null, {src: './images/XWingright.png'});
-  const deathstar = appendElement(root, 'img', 'deathStar', null, {src: './images/deathstar.png', id: 'deathstar'});
-  moveDeathstar(deathstar);
+  // const deathstar = appendElement(root, 'img', 'deathStar', null, {src: './images/deathstar.png', id: 'deathstar'});
+  // moveDeathstar(deathstar);
+  createTieFighters();
   controlXwing(xwing);
 }
 
