@@ -43,13 +43,37 @@ const xWingState = {
 let deathstarHP = 50;
 let playerHP = 10;
 
+function deathstarShoot(deathstar, dsSpeed) {
+  const shootInterval = setInterval(() => {
+    const laser = appendElement(root, 'img', 'dsLaser', null, {src: './images/laser1.png'});
+    laser.style.position = 'absolute';
+    laser.style.top = positionToNumber(deathstar.style.top) + 42 + 'px';
+    laser.style.width = window.innerWidth - 30 + 'px';
+    laser.style.left = '-100px';
+    function moveLaser() {
+      const shootDownInterval = setInterval(() => {
+        laser.style.top = positionToNumber(deathstar.style.top) + 42 + 'px';
+        if (positionToNumber(deathstar.style.top) > window.innerHeight - 200) {
+          laser.remove();
+        }
+      }, dsSpeed)
+      setTimeout(() => {
+        laser.remove();
+      }, 800)
+    }
+    moveLaser();
+  }, 3000);
+}
+
 function moveDeathstar(deathstar) {
   dsStyle = deathstar.style
   dsStyle.height = '200px'
   dsStyle.position = 'fixed';
   dsStyle.left = window.innerWidth - 220 + 'px';
   let dsSpeed;
-
+  let dsDown = true;
+  deathstarShoot(deathstar, dsSpeed);
+  
   function moveDsDown() {
     dsSpeed = Math.round(10 + (Math.random() * 30));
     const down = setInterval(() => {
@@ -57,6 +81,7 @@ function moveDeathstar(deathstar) {
       dsStyle.top = positionToNumber(dsStyle.top) + 2 + 'px';
       deathstarState.top = positionToNumber(dsStyle.top);
       if (positionToNumber(dsStyle.top) > window.innerHeight - 200) {
+        dsDown = false;
         moveDsUp();
         clearInterval(down);
       }
@@ -70,6 +95,7 @@ function moveDeathstar(deathstar) {
       dsStyle.top = positionToNumber(dsStyle.top) - 2 + 'px';
       deathstarState.top = positionToNumber(dsStyle.top);
       if (positionToNumber(dsStyle.top) < 0) {
+        dsDown = false;
         moveDsDown();
         clearInterval(up);
       }
@@ -77,6 +103,7 @@ function moveDeathstar(deathstar) {
   }
   moveDsDown();
 }
+
 
 function controlXwing(xwing) {
   xStyle = xwing.style;
