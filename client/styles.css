@@ -85,6 +85,44 @@
   }
 }
 
+@keyframes appearDisappear {
+  0% {
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  40% {
+    opacity: 0;
+  }
+  60% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
 #deathstar.active {
   animation: appearDisappear 5s forwards;
+}
+
+#infobar {
+  display: block;
+  position: absolute;
+  height: 30px;
+  background-color: black;
+}
+
+.life {
+  display: inline;
+  position: relative;
+  height: 30px;
+}
+
+#lives.active {
+  animation: appearDisappear 1s forwards;
 }

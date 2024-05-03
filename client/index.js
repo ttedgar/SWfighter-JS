@@ -33,14 +33,15 @@ const keyState = {
 const deathstarState = {
   top: 0,
   left: 0
-}
+};
 
 const xWingState = {
   top: 0,
   left: 0
 };
 
-let deathstarHP = 1
+let deathstarHP = 50;
+let playerHP = 10;
 
 function moveDeathstar(deathstar) {
   dsStyle = deathstar.style
@@ -80,12 +81,13 @@ function moveDeathstar(deathstar) {
 function controlXwing(xwing) {
   xStyle = xwing.style;
   xStyle.position = 'relative';
+  xStyle.top = '30px';
   xStyle.height = '75px';
   function bottomBorder(elementStyle) {
     return elementStyle.top.split('p')[0] < window.innerHeight - 100
   }
   function topBorder(elementStyle) {
-    return elementStyle.top.split('p')[0] > 0
+    return elementStyle.top.split('p')[0] > 30
   }
   function rightBorder(elementStyle) {
     return elementStyle.left.split('p')[0] < window.innerWidth - 200
@@ -99,7 +101,7 @@ function controlXwing(xwing) {
     xWingState.left = positionToNumber(xStyle.left);
   }
 
-  function hitDeathStar(deathStar, playerShot, shotStyle) {
+  function hitDeathStar(deathStar, playerShot, shotStyle, interval) {
     if (deathStar) {
       if (
         positionToNumber(shotStyle.left) > window.innerWidth - 160 && 
@@ -115,7 +117,7 @@ function controlXwing(xwing) {
           playerShot.remove();
         }, 500)
         clearInterval(interval);
-        if (deathstarHP < 0) {
+        if (deathstarHP <= 0) {
           deathStar.src = './images/deathstar-ruin.png';
           const bigBumm = appendElement(root, 'img', null, null, {src: './images/explosion.gif'});
           bigBumm.style.width = '150px'
@@ -143,7 +145,7 @@ function controlXwing(xwing) {
     shotStyle.top = xWingState.top + 44 + 'px';
     shotStyle.left = xWingState.left + 50 + 'px';
     const interval = setInterval(() => {
-      hitDeathStar(deathStar, playerShot, shotStyle);
+      hitDeathStar(deathStar, playerShot, shotStyle, interval);
 
       const tieElements = Array.from(document.querySelectorAll('.tie'));
       tieElements.forEach((tie) => {
@@ -151,16 +153,20 @@ function controlXwing(xwing) {
             positionToNumber(tie.style.top) > positionToNumber(shotStyle.top) - 30 &&
             positionToNumber(tie.style.left) < positionToNumber(shotStyle.left) + 20 &&
             positionToNumber(tie.style.left) > positionToNumber(shotStyle.left) - 20 &&
-            tie.id !== 'deadTie'
-          ) {
-          tie.src = './images/explosion.gif';
-          tie.id = 'deadTie'
+            tie.id !== 'deadTie') {
+          const tieExplosion = appendElement(root, 'img', 'tieExp', null, {src: './images/explosion.gif'});
+          tieExplosion.style.position = 'absolute';
+          tieExplosion.style.width = '30px'; 
+          tieExplosion.style.top = positionToNumber(tie.style.top) + 10 + 'px';
+          tieExplosion.style.left = positionToNumber(tie.style.left) + 10 + 'px';
+          tie.id = 'deadTie';
+          tie.remove();
+          setTimeout(() => {
+            tieExplosion.remove();
+          }, 300);
           setTimeout(() => {
             playerShot.remove();
           }, 10);
-          setTimeout(() => {
-            tie.remove();
-          }, 300);
         }
       })
 
@@ -226,22 +232,68 @@ function controlXwing(xwing) {
   window.addEventListener('keyup', handleKeyUp);
 }
 
-function createTieFighter() {
+function tieShoot(tie, msBetweenshots) {
+  const xwing = document.getElementById('xwing');
+  const shotInterval = setInterval(() => {
+    if (tie.id === 'deadTie') {
+      clearInterval(shotInterval);
+      return;
+    }
+    const shot = appendElement(root, 'img', 'tieShot', null, {src: './images/TIEshot.png'});
+    shot.style.position = 'absolute';
+    shot.style.height = '25px';
+    shot.style.top = positionToNumber(tie.style.top) + 7 + 'px';
+    shot.style.left = positionToNumber(tie.style.left) + 15 + 'px';
+    let hit = false;
+    let hitControl = false;
+    const movementInterval = setInterval(() => {
+      shot.style.left = positionToNumber(shot.style.left) - 4 + 'px';
+        if (positionToNumber(shot.style.left) < 0) {
+          shot.remove();
+        }
+        if (positionToNumber(shot.style.left) < positionToNumber(xwing.style.left) + 50 &&
+            positionToNumber(shot.style.left) > positionToNumber(xwing.style.left) + 10 &&
+            positionToNumber(shot.style.top) < positionToNumber(xwing.style.top) + 50 &&
+            positionToNumber(shot.style.top) > positionToNumber(xwing.style.top) + 10) {
+          gameOver();
+          shot.src = './images/explosion.gif';
+          hit = true;
+          if (!hitControl && hit) {
+            playerHP--;
+            document.getElementById('lives').classList.add('active');
+            setTimeout(() => {
+              document.getElementById('lives').classList.remove('active');
+            }, 1000)
+          }
+          hitControl = true;
+          displayLives();
+          console.log(playerHP);
+          setTimeout(() => {
+            shot.remove();
+          }, 500)
+        }
+      }, 10)
+    }, msBetweenshots)
+}
+
+function createTieFighter(horizontalPosition, speedLeft, speedVertical, msBetweenshots = 1000) {
   const tie = appendElement(root, 'img', 'tie', null, {src: './images/TIEfighter.png', id: 'tie'});
   tie.style.position = 'absolute';
+  tie.style.top = horizontalPosition + 'px';
   tie.style.left = window.innerWidth - 100 + 'px';
+  tieShoot(tie, msBetweenshots);
   function moveTieDown() {
     const down = setInterval(() => {
-      tie.style.top = positionToNumber(tie.style.top) + 1 + 'px';
-      tie.style.left = positionToNumber(tie.style.left) - 0.5 + 'px';
+      tie.style.top = positionToNumber(tie.style.top) + speedVertical + 'px';
+      tie.style.left = positionToNumber(tie.style.left) - speedLeft + 'px';
       positionToNumber(tie.style.top) > window.innerHeight - 50 ? (clearInterval(down), moveTieUp()) : null;
       positionToNumber(tie.style.left) < 0 ? tie.remove() : null
     }, 10)
   }
   function moveTieUp() {
     const up = setInterval(() => {
-      tie.style.top = positionToNumber(tie.style.top) - 1 + 'px';
-      tie.style.left = positionToNumber(tie.style.left) - 0.5 + 'px';
+      tie.style.top = positionToNumber(tie.style.top) - speedVertical + 'px';
+      tie.style.left = positionToNumber(tie.style.left) - speedLeft + 'px';
       positionToNumber(tie.style.top) < 10 ? (clearInterval(up), moveTieDown()) : null;
       positionToNumber(tie.style.left) < 0 ? tie.remove() : null
     }, 10)
@@ -249,21 +301,48 @@ function createTieFighter() {
   moveTieDown();
 }
 
-function createTieFighters() {
+function createTieFighters(horizontalPosition = 0, speedLeft = 0.5, speedVertical = 1, msBetweenTies = 1000, msBetweenshots = 1000) {
   let counter = 0
   const interval = setInterval(() => {
     counter++;
-    createTieFighter();
+    createTieFighter(horizontalPosition, speedLeft, speedVertical, msBetweenshots);
     counter === 30 ? clearInterval(interval) : null
-  }, 1000)
+  }, msBetweenTies)
+}
+
+function displayLives() {
+  clearLives();
+  const lives = document.getElementById('lives');
+  for (let i = 1; i < playerHP + 1; i++) {
+    const life = appendElement(lives, 'img', 'life', null, {src: './images/Luke.png'});
+  }
+}
+
+function clearLives() {
+  const lifeArray = Array.from(document.getElementsByClassName("life"));
+  lifeArray.forEach((life) => {
+    life.remove();
+  })
+}
+
+function gameOver() {
+  if (playerHP === 0) {
+    root.textContent = '';
+    root.textContent = 'GAME OVER!';
+  }
 }
 
 function main() {
   const root = document.getElementById('root');
-  const xwing = appendElement(root, 'img', 'xWing', null, {src: './images/XWingright.png'});
-  // const deathstar = appendElement(root, 'img', 'deathStar', null, {src: './images/deathstar.png', id: 'deathstar'});
-  // moveDeathstar(deathstar);
-  createTieFighters();
+  const infoBar = appendElement(root, 'div', 'infobar', null, {id: 'infobar'});
+  const lives = appendElement(infoBar, 'div', 'lives', null, {id: 'lives'});
+  displayLives();
+  const xwing = appendElement(root, 'img', 'xWing', null, {src: './images/XWingright.png', id: 'xwing'});
+  const deathstar = appendElement(root, 'img', 'deathStar', null, {src: './images/deathstar.png', id: 'deathstar'});
+  moveDeathstar(deathstar);
+  // createTieFighters(0, 0.5, 1, 2000, 2000);
+  // createTieFighters(window.innerHeight-50, 0.5, 1, 2000, 2000);
+  // createTieFighter(0, 0.1, 1, 300);
   controlXwing(xwing);
 }
 
