@@ -39,8 +39,8 @@ const xWingState = {
   left: 0
 };
 
-let deathstarHP = 50;
-let stardestroyerHPs = [];
+let deathstarHP = 100;
+let shuttleHPs = [];
 let playerHP = 10;
 
 
@@ -68,8 +68,9 @@ function deathstarShoot(deathstar, dsSpeed) {
   }, 3000);
 }
 
-function moveDeathstar(deathstar) {
-  dsStyle = deathstar.style
+function createDeathstar() {
+  const deathstar = appendElement(root, 'img', 'deathStar', null, {src: './images/deathstar.png', id: 'deathstar'});
+  let dsStyle = deathstar.style
   dsStyle.height = '200px'
   dsStyle.position = 'fixed';
   dsStyle.left = window.innerWidth - 220 + 'px';
@@ -112,7 +113,8 @@ function saveXwingPosition(xStyle) {
   xWingState.left = positionToNumber(xStyle.left);
 }
 
-function controlXwing(xwing) {
+function createXwing() {
+  const xwing = appendElement(root, 'img', 'xWing', null, {src: './images/XWingright.png', id: 'xwing'});
   let xStyle = xwing.style;
   xStyle.position = 'relative';
   xStyle.top = window.innerHeight/2 + 'px';
@@ -204,10 +206,10 @@ function controlXwing(xwing) {
           let numberOfSd = sd.id.split(':')[1];
           hit = true;
           if (!hitControl && hit) {
-            stardestroyerHPs[numberOfSd] = stardestroyerHPs[numberOfSd] - 1;
+            shuttleHPs[numberOfSd] = shuttleHPs[numberOfSd] - 1;
           }
           hitControl = true;
-          console.log(stardestroyerHPs);
+          console.log(shuttleHPs);
           const sdExplosion = appendElement(root, 'img', 'dsExp', null, {src: './images/explosion.gif'});
           sdExplosion.style.position = 'absolute';
           sdExplosion.style.width = '30px'; 
@@ -219,7 +221,7 @@ function controlXwing(xwing) {
           setTimeout(() => {
             playerShot.remove();
           }, 10);
-          if (stardestroyerHPs[numberOfSd] < 0) {
+          if (shuttleHPs[numberOfSd] < 0) {
             const sdExplosion = appendElement(root, 'img', 'dsExp', null, {src: './images/explosion.gif'});
             sdExplosion.style.position = 'absolute';
             sdExplosion.style.width = '300px'; 
@@ -227,6 +229,51 @@ function controlXwing(xwing) {
             sdExplosion.style.left = positionToNumber(sd.style.left) + 50 + 'px';
             sd.remove();
             document.getElementById(`beam:${sd.id.split(':')[1]}`).remove();
+            setTimeout(() => {
+              sdExplosion.remove();
+            }, 600)
+          }
+        }
+      })
+  }
+
+  function hitShutter(playerShot) {
+    const shotStyle = playerShot.style;
+    const shuttle = Array.from(document.querySelectorAll('.shuttle'));
+    shuttle.forEach((shuttle) => {
+        console.log(shuttle.id);
+        let hit = false;
+        let hitControl = false;
+        if (positionToNumber(shuttle.style.top) < positionToNumber(shotStyle.top)&&
+            positionToNumber(shuttle.style.top) > positionToNumber(shotStyle.top) - 70 &&
+            positionToNumber(shuttle.style.left) < positionToNumber(shotStyle.left)&&
+            positionToNumber(shuttle.style.left) > positionToNumber(shotStyle.left) - 10 &&
+            shuttle.id !== 'deadSd') {
+          let numberOfShutter = shuttle.id.split(':')[1];
+          hit = true;
+          if (!hitControl && hit) {
+            shuttleHPs[numberOfShutter] = shuttleHPs[numberOfShutter] - 1;
+          }
+          hitControl = true;
+          console.log(shuttleHPs);
+          const sdExplosion = appendElement(root, 'img', 'dsExp', null, {src: './images/explosion.gif'});
+          sdExplosion.style.position = 'absolute';
+          sdExplosion.style.width = '30px'; 
+          sdExplosion.style.top = positionToNumber(shuttle.style.top) + 30 + 'px';
+          sdExplosion.style.left = positionToNumber(shuttle.style.left) + 40 + 'px';
+          setTimeout(() => {
+            sdExplosion.remove();
+          }, 300);
+          setTimeout(() => {
+            playerShot.remove();
+          }, 10);
+          if (shuttleHPs[numberOfShutter] < 0) {
+            const sdExplosion = appendElement(root, 'img', 'dsExp', null, {src: './images/explosion.gif'});
+            sdExplosion.style.position = 'absolute';
+            sdExplosion.style.width = '100px'; 
+            sdExplosion.style.top = positionToNumber(shuttle.style.top) + 30 + 'px';
+            sdExplosion.style.left = positionToNumber(shuttle.style.left) + 40 + 'px';
+            shuttle.remove();
             setTimeout(() => {
               sdExplosion.remove();
             }, 600)
@@ -247,6 +294,7 @@ function controlXwing(xwing) {
       hitDeathStar(deathStar, playerShot, shotStyle, interval);
       hitTieFighter(playerShot);
       hitStardestroyer(playerShot);
+      hitShutter(playerShot);
       
 
       shotStyle.left = positionToNumber(shotStyle.left) + 20 + 'px';
@@ -464,7 +512,7 @@ function tractorBeam(stardestroyer, beamDuration, beamPulse) {
     let clearCondition;
     
     const beamInterval = setInterval(() => {
-      if (stardestroyerHPs[stardestroyer.id.split(':')[1]] < 0) {
+      if (shuttleHPs[stardestroyer.id.split(':')[1]] < 0) {
         clearInterval(beamInterval);
       }
       saveXwingPosition(xwing.style);
@@ -483,7 +531,7 @@ function tractorBeam(stardestroyer, beamDuration, beamPulse) {
   }
 
   const beamPause = setInterval(() => {
-    if (stardestroyerHPs[stardestroyer.id.split(':')[1]] < 0) {
+    if (shuttleHPs[stardestroyer.id.split(':')[1]] < 0) {
       clearInterval(beamPause);
     }
 
@@ -501,8 +549,8 @@ function tractorBeam(stardestroyer, beamDuration, beamPulse) {
 }
 
 function createStardestroyer(startingHeight) {
-  const stardestroyer = appendElement(root, 'img', 'stardestroyer', null, {src: './images/stardestroyer.png', id: `sd:${stardestroyerHPs.length}`});
-  stardestroyerHPs.push(1);
+  const stardestroyer = appendElement(root, 'img', 'stardestroyer', null, {src: './images/stardestroyer.png', id: `sd:${shuttleHPs.length}`});
+  shuttleHPs.push(40);
   let sdStyle = stardestroyer.style;
   startingHeight ? sdStyle.top = startingHeight + 'px' : null;
   sdStyle.height = '100px';
@@ -513,17 +561,47 @@ function createStardestroyer(startingHeight) {
 
 function shootRocket(shuttle, xwing) {
   const rocket = appendElement(root, 'img', 'rocket', null, {src: './images/rocket.png'});
+  if (shuttleHPs[shuttle.id.split(':')[1]] < 0) {
+    rocket.remove();
+  }
   rocket.style.height = '8px';
   rocket.style.position = 'fixed';
   rocket.style.top = positionToNumber(shuttle.style.top) + 55 + 'px';
   rocket.style.left = positionToNumber(shuttle.style.left) + 40 + 'px';
   let counter = 0.0001;
+  let hit = false;
+  let hitControl = false;
   const horizontal = setInterval(() => {
     counter = counter * 1.015;
     rocket.style.left = positionToNumber(rocket.style.left) - 1 - counter + 'px';
     if (positionToNumber(rocket.style.left) < 0) {
       clearInterval(horizontal);
       rocket.remove();
+    }
+    if (positionToNumber(rocket.style.left) < positionToNumber(xwing.style.left) + 50 &&
+      positionToNumber(rocket.style.left) > positionToNumber(xwing.style.left) + 10 &&
+      positionToNumber(rocket.style.top) < positionToNumber(xwing.style.top) + 50 &&
+      positionToNumber(rocket.style.top) > positionToNumber(xwing.style.top) + 10) {
+      gameOver();
+      hit = true;
+      if (!hitControl && hit) {
+        playerHP--;
+        document.getElementById('lives').classList.add('active');
+        setTimeout(() => {
+          document.getElementById('lives').classList.remove('active');
+        }, 1000)
+        const explosion = appendElement(root, 'img', 'explosion', null, {src: './images/explosion.gif'});
+        explosion.style.height = '30px';
+        explosion.style.position = 'fixed';
+        explosion.style.top = rocket.style.top;
+        explosion.style.left = rocket.style.left;
+        rocket.remove();
+        setTimeout(() => {
+          explosion.remove();
+        }, 500)
+      }
+      hitControl = true;
+      displayLives();
     }
   }, 10);
   const vertical = setInterval(() => {
@@ -539,33 +617,37 @@ function shootRocket(shuttle, xwing) {
   }, 10);
 }
 
-function createShuttle() {
+function createShuttle(verticalPosition) {
   const xwing = document.getElementById('xwing')
-  const shuttle = appendElement(root, 'img', 'shuttle', null, {src: './images/shuttle.png'});
+  const shuttle = appendElement(root, 'img', 'shuttle', null, {src: './images/shuttle.png', id: `shutter:${shuttleHPs.length}`});
+  shuttleHPs.push(10);
   let shuttleStyle = shuttle.style;
   shuttleStyle.height = '80px';
   shuttleStyle.position = 'fixed';
+  shuttleStyle.top = verticalPosition + 'px'
   shuttleStyle.left = window.innerWidth - 150 + 'px';
   const rocketsInterval = setInterval(() => {
+    if (shuttleHPs[shuttle.id.split(':')[1]] < 0) {
+      clearInterval(rocketsInterval);
+    }
     shootRocket(shuttle, xwing);
-  }, 2000);
+  }, 5000);
 }
 
 function main() {
   const root = document.getElementById('root');
   const infoBar = appendElement(root, 'div', 'infobar', null, {id: 'infobar'});
   const lives = appendElement(infoBar, 'div', 'lives', null, {id: 'lives'});
+  createXwing();
   displayLives();
-  const xwing = appendElement(root, 'img', 'xWing', null, {src: './images/XWingright.png', id: 'xwing'});
-  createShuttle();
-  // createStardestroyer();
-  // createStardestroyer(100);
-  // const deathstar = appendElement(root, 'img', 'deathStar', null, {src: './images/deathstar.png', id: 'deathstar'});
-  // moveDeathstar(deathstar);
-  // createTieFighters(0, 0.5, 1, 2000, 2000);
-  // createTieFighters(window.innerHeight-50, 0.5, 1, 2000, 2000);
-  // createTieFighter(0, 0.1, 1, 300);
-  controlXwing(xwing);
+  createShuttle(100);
+  createShuttle(500);
+  createStardestroyer();
+  createStardestroyer(100);
+  createDeathstar();
+  createTieFighters(0, 0.5, 1, 2000, 2000);
+  createTieFighters(window.innerHeight-50, 0.5, 1, 2000, 2000);
+  createTieFighter(0, 0.1, 1, 300);
 }
 
 main();
