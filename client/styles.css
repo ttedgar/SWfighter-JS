@@ -114,7 +114,7 @@
   display: block;
   position: absolute;
   height: 30px;
-  background-color: black;
+  background-color: rgb(34, 34, 34);
 }
 
 .life {
@@ -125,4 +125,16 @@
 
 #lives.active {
   animation: appearDisappear 1s forwards;
+}
+
+@keyframes flicker {
+  0%   { opacity: 0.025; }
+  25%  { opacity: 0.125; }
+  50%  { opacity: 0.075; }
+  75%  { opacity: 0.175; }
+  100% { opacity: 0.05; }
+}
+
+#beam {
+  animation: flicker 0.5s infinite alternate;
 }

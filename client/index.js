@@ -1,3 +1,6 @@
+// import { verticalMovement } from "./movement.js";  
+import { positionToNumber } from "./utility.js";
+
 function appendElement (parent, tagName, classes, text, attributes) {
   const elementName = document.createElement(tagName);
   parent.appendChild(elementName);
@@ -18,10 +21,6 @@ function appendElement (parent, tagName, classes, text, attributes) {
   return elementName;
 }
 
-function positionToNumber(position) {
-  return Number(position.split('p')[0]);
-}
-
 const keyState = {
   '1': false,
   '2': false,
@@ -36,23 +35,26 @@ const deathstarState = {
 };
 
 const xWingState = {
-  top: 0,
+  top: window.innerHeight/2,
   left: 0
 };
 
 let deathstarHP = 50;
 let playerHP = 10;
 
+
 function deathstarShoot(deathstar, dsSpeed) {
   const shootInterval = setInterval(() => {
-    const laser = appendElement(root, 'img', 'dsLaser', null, {src: './images/laser1.png'});
-    laser.style.position = 'absolute';
-    laser.style.top = positionToNumber(deathstar.style.top) + 42 + 'px';
-    laser.style.width = window.innerWidth - 30 + 'px';
-    laser.style.left = '-100px';
+    deathstarHP < 1 ? clearInterval(shootInterval) : null;
+    const laser = appendElement(root, 'img', 'dsLaser', null, {src: './images/laser6.png'});
+    laser.style.position = 'fixed';
+    laser.style.top = positionToNumber(deathstar.style.top) - 105 + 'px';
+    laser.style.width = window.innerWidth + 300 + 'px';
+    laser.style.left = '-329px';
     function moveLaser() {
       const shootDownInterval = setInterval(() => {
-        laser.style.top = positionToNumber(deathstar.style.top) + 42 + 'px';
+        deathstarHP < 1 ? clearInterval(shootInterval) : null;
+        laser.style.top = positionToNumber(deathstar.style.top) - 105 + 'px';
         if (positionToNumber(deathstar.style.top) > window.innerHeight - 200) {
           laser.remove();
         }
@@ -106,9 +108,9 @@ function moveDeathstar(deathstar) {
 
 
 function controlXwing(xwing) {
-  xStyle = xwing.style;
+  let xStyle = xwing.style;
   xStyle.position = 'relative';
-  xStyle.top = '30px';
+  xStyle.top = window.innerHeight/2 + 'px';
   xStyle.height = '75px';
   function bottomBorder(elementStyle) {
     return elementStyle.top.split('p')[0] < window.innerHeight - 100
@@ -163,18 +165,9 @@ function controlXwing(xwing) {
     }
   }
 
-  function playerShoot() {
-    const playerShot = appendElement(root, 'img', 'shot', null, {src: './images/shot.png'});
-    const deathStar = document.getElementById('deathstar');
+  function hitTieFighter(playerShot) {
     const shotStyle = playerShot.style;
-    shotStyle.position = 'absolute';
-    shotStyle.width = '10px';
-    shotStyle.top = xWingState.top + 44 + 'px';
-    shotStyle.left = xWingState.left + 50 + 'px';
-    const interval = setInterval(() => {
-      hitDeathStar(deathStar, playerShot, shotStyle, interval);
-
-      const tieElements = Array.from(document.querySelectorAll('.tie'));
+    const tieElements = Array.from(document.querySelectorAll('.tie'));
       tieElements.forEach((tie) => {
         if (positionToNumber(tie.style.top) < positionToNumber(shotStyle.top) + 10 &&
             positionToNumber(tie.style.top) > positionToNumber(shotStyle.top) - 30 &&
@@ -196,6 +189,20 @@ function controlXwing(xwing) {
           }, 10);
         }
       })
+  }
+
+  function playerShoot() {
+    const playerShot = appendElement(root, 'img', 'shot', null, {src: './images/shot.png'});
+    const deathStar = document.getElementById('deathstar');
+    const shotStyle = playerShot.style;
+    shotStyle.position = 'absolute';
+    shotStyle.width = '10px';
+    shotStyle.top = xWingState.top + 44 + 'px';
+    shotStyle.left = xWingState.left + 50 + 'px';
+    const interval = setInterval(() => {
+      hitDeathStar(deathStar, playerShot, shotStyle, interval);
+      hitTieFighter(playerShot)
+      
 
       shotStyle.left = positionToNumber(shotStyle.left) + 20 + 'px';
       positionToNumber(shotStyle.left) > window.innerWidth - 10 ? (playerShot.remove(), clearInterval(interval)) : null;
@@ -359,16 +366,107 @@ function gameOver() {
   }
 }
 
+function handleStardestroyer(stardestroyer) {
+  let sdStyle = stardestroyer.style
+  let sdSpeed;
+  let beam = appendElement(root, 'img', 'tractorbeam', null, {src: './images/beam2.png', id: 'beam'});
+  beam.style.width = 1000 + 'px';
+  beam.style.position = 'fixed'
+  beam.style.display = 'none';
+  let beamDuration = 1000;
+  let beamPulse = 3000;
+
+  setInterval(() => {
+    setTimeout(() => {
+      beam.style.display = 'none';
+    }, beamDuration);
+    beam.style.display = 'block';
+  }, beamPulse);
+  
+  function moveDown() {
+    sdSpeed = Math.round(20 + (Math.random() * 20));
+    const down = setInterval(() => {
+      beam.style.top = positionToNumber(sdStyle.top) - 400 + 'px';
+      beam.style.left = positionToNumber(sdStyle.left) - window.innerWidth/2 + 'px';
+      sdStyle.top = positionToNumber(sdStyle.top) + 2 + 'px';
+      if (positionToNumber(sdStyle.top) > window.innerHeight - 200) {
+        moveUp();
+        clearInterval(down);
+      }
+    }, sdSpeed);
+  }
+  
+  function moveUp() {
+    sdSpeed = Math.round(20 + (Math.random() * 20));
+    const up = setInterval(() => {
+      beam.style.top = positionToNumber(sdStyle.top) - 400 + 'px';
+      beam.style.left = positionToNumber(sdStyle.left) - window.innerWidth/2 + 'px';
+      sdStyle.top = positionToNumber(sdStyle.top) - 2 + 'px';
+      if (positionToNumber(sdStyle.top) < 0) {
+        moveDown();
+        clearInterval(up);
+      }
+    }, sdSpeed);
+  }
+  moveDown();
+  tractorBeam(stardestroyer, beamDuration, beamPulse);
+}
+
+function tractorBeam(stardestroyer, beamDuration, beamPulse) {
+  const xwing = document.getElementById('xwing');
+
+  function pull(topOrLeft, plusOrMinus) {
+    let clearCondition;
+    
+    const beamInterval = setInterval(() => {
+      plusOrMinus > 0 
+      ? clearCondition = positionToNumber(stardestroyer.style[topOrLeft]) < positionToNumber(xwing.style[topOrLeft])
+      : clearCondition = positionToNumber(stardestroyer.style[topOrLeft]) > positionToNumber(xwing.style[topOrLeft])
+      
+      xwing.style[topOrLeft] = positionToNumber(xwing.style[topOrLeft]) + plusOrMinus + 'px'
+      setTimeout(() => {
+        clearInterval(beamInterval);
+      }, beamDuration);
+      if (clearCondition) {
+        clearInterval(beamInterval);
+      }
+    }, 10);
+  }
+
+  const beamPause = setInterval(() => {
+    if (positionToNumber(stardestroyer.style.left) > positionToNumber(xwing.style.left)) {
+      pull('left', 0.5);
+    } else {
+      pull('left', -0.5);
+    }
+    if (positionToNumber(stardestroyer.style.top) > positionToNumber(xwing.style.top)) {
+      pull('top', 0.5);   
+    } else {
+      pull('top', -0.5);
+    }
+  }, beamPulse)
+}
+
+function createStardestroyer() {
+  const stardestroyer = appendElement(root, 'img', 'stradestroyer', null, {src: './images/stardestroyer.png', id: 'stardestroyer'});
+  let sdStyle = stardestroyer.style;
+  sdStyle.height = '100px';
+  sdStyle.position = 'fixed';
+  sdStyle.left = window.innerWidth/2 + 'px';
+  handleStardestroyer(stardestroyer);
+}
+
 function main() {
   const root = document.getElementById('root');
   const infoBar = appendElement(root, 'div', 'infobar', null, {id: 'infobar'});
   const lives = appendElement(infoBar, 'div', 'lives', null, {id: 'lives'});
   displayLives();
   const xwing = appendElement(root, 'img', 'xWing', null, {src: './images/XWingright.png', id: 'xwing'});
-  const deathstar = appendElement(root, 'img', 'deathStar', null, {src: './images/deathstar.png', id: 'deathstar'});
-  moveDeathstar(deathstar);
-  // createTieFighters(0, 0.5, 1, 2000, 2000);
-  // createTieFighters(window.innerHeight-50, 0.5, 1, 2000, 2000);
+  createStardestroyer();
+  // const deathstar = appendElement(root, 'img', 'deathStar', null, {src: './images/deathstar.png', id: 'deathstar'});
+  // moveDeathstar(deathstar);
+  createTieFighters(0, 0.5, 1, 2000, 2000);
+  createTieFighters(window.innerHeight-50, 0.5, 1, 2000, 2000);
   // createTieFighter(0, 0.1, 1, 300);
   controlXwing(xwing);
 }
