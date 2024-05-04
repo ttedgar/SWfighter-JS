@@ -50,8 +50,8 @@ function deathstarShoot(deathstar, dsSpeed) {
     const laser = appendElement(root, 'img', 'dsLaser', null, {src: './images/laser6.png'});
     laser.style.position = 'fixed';
     laser.style.top = positionToNumber(deathstar.style.top) - 105 + 'px';
-    laser.style.width = window.innerWidth + 300 + 'px';
-    laser.style.left = '-329px';
+    laser.style.width = 1820 + 'px';
+    laser.style.right = '35px';
     function moveLaser() {
       const shootDownInterval = setInterval(() => {
         deathstarHP < 1 ? clearInterval(shootInterval) : null;
