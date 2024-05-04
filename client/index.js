@@ -40,6 +40,7 @@ const xWingState = {
 };
 
 let deathstarHP = 50;
+let stardestroyerHPs = [];
 let playerHP = 10;
 
 
@@ -106,6 +107,10 @@ function moveDeathstar(deathstar) {
   moveDsDown();
 }
 
+function saveXwingPosition(xStyle) {
+  xWingState.top = positionToNumber(xStyle.top);
+  xWingState.left = positionToNumber(xStyle.left);
+}
 
 function controlXwing(xwing) {
   let xStyle = xwing.style;
@@ -125,10 +130,6 @@ function controlXwing(xwing) {
     return elementStyle.left.split('p')[0] > 0
   }
 
-  function saveXwingPosition(xStyle) {
-    xWingState.top = positionToNumber(xStyle.top);
-    xWingState.left = positionToNumber(xStyle.left);
-  }
 
   function hitDeathStar(deathStar, playerShot, shotStyle, interval) {
     if (deathStar) {
@@ -156,8 +157,6 @@ function controlXwing(xwing) {
           deathStar.classList.add('active')
           setTimeout(() => {
             bigBumm.remove();
-          }, 5000)
-          setTimeout(() => {
             deathStar.remove();
           }, 5000)
         }
@@ -191,6 +190,51 @@ function controlXwing(xwing) {
       })
   }
 
+  function hitStardestroyer(playerShot) {
+    const shotStyle = playerShot.style;
+    const stardestroyers = Array.from(document.querySelectorAll('.stardestroyer'));
+      stardestroyers.forEach((sd) => {
+        let hit = false;
+        let hitControl = false;
+        if (positionToNumber(sd.style.top) < positionToNumber(shotStyle.top) + 40 &&
+            positionToNumber(sd.style.top) > positionToNumber(shotStyle.top) - 60 &&
+            positionToNumber(sd.style.left) < positionToNumber(shotStyle.left) + 20 &&
+            positionToNumber(sd.style.left) > positionToNumber(shotStyle.left) - 20 &&
+            sd.id !== 'deadSd') {
+          let numberOfSd = sd.id.split(':')[1];
+          hit = true;
+          if (!hitControl && hit) {
+            stardestroyerHPs[numberOfSd] = stardestroyerHPs[numberOfSd] - 1;
+          }
+          hitControl = true;
+          console.log(stardestroyerHPs);
+          const sdExplosion = appendElement(root, 'img', 'dsExp', null, {src: './images/explosion.gif'});
+          sdExplosion.style.position = 'absolute';
+          sdExplosion.style.width = '30px'; 
+          sdExplosion.style.top = positionToNumber(sd.style.top) + 10 + 'px';
+          sdExplosion.style.left = positionToNumber(sd.style.left) + 10 + 'px';
+          setTimeout(() => {
+            sdExplosion.remove();
+          }, 300);
+          setTimeout(() => {
+            playerShot.remove();
+          }, 10);
+          if (stardestroyerHPs[numberOfSd] < 0) {
+            const sdExplosion = appendElement(root, 'img', 'dsExp', null, {src: './images/explosion.gif'});
+            sdExplosion.style.position = 'absolute';
+            sdExplosion.style.width = '300px'; 
+            sdExplosion.style.top = positionToNumber(sd.style.top) + 10 + 'px';
+            sdExplosion.style.left = positionToNumber(sd.style.left) + 50 + 'px';
+            sd.remove();
+            document.getElementById(`beam:${sd.id.split(':')[1]}`).remove();
+            setTimeout(() => {
+              sdExplosion.remove();
+            }, 600)
+          }
+        }
+      })
+  }
+
   function playerShoot() {
     const playerShot = appendElement(root, 'img', 'shot', null, {src: './images/shot.png'});
     const deathStar = document.getElementById('deathstar');
@@ -201,7 +245,8 @@ function controlXwing(xwing) {
     shotStyle.left = xWingState.left + 50 + 'px';
     const interval = setInterval(() => {
       hitDeathStar(deathStar, playerShot, shotStyle, interval);
-      hitTieFighter(playerShot)
+      hitTieFighter(playerShot);
+      hitStardestroyer(playerShot);
       
 
       shotStyle.left = positionToNumber(shotStyle.left) + 20 + 'px';
@@ -369,7 +414,7 @@ function gameOver() {
 function handleStardestroyer(stardestroyer) {
   let sdStyle = stardestroyer.style
   let sdSpeed;
-  let beam = appendElement(root, 'img', 'tractorbeam', null, {src: './images/beam2.png', id: 'beam'});
+  let beam = appendElement(root, 'img', 'beam', null, {src: './images/beam2.png', id: `beam:${stardestroyer.id.split(':')[1]}`});
   beam.style.width = 1000 + 'px';
   beam.style.position = 'fixed'
   beam.style.display = 'none';
@@ -387,7 +432,7 @@ function handleStardestroyer(stardestroyer) {
     sdSpeed = Math.round(20 + (Math.random() * 20));
     const down = setInterval(() => {
       beam.style.top = positionToNumber(sdStyle.top) - 400 + 'px';
-      beam.style.left = positionToNumber(sdStyle.left) - window.innerWidth/2 + 'px';
+      beam.style.left = positionToNumber(sdStyle.left) - 700 + 'px';
       sdStyle.top = positionToNumber(sdStyle.top) + 2 + 'px';
       if (positionToNumber(sdStyle.top) > window.innerHeight - 200) {
         moveUp();
@@ -400,7 +445,7 @@ function handleStardestroyer(stardestroyer) {
     sdSpeed = Math.round(20 + (Math.random() * 20));
     const up = setInterval(() => {
       beam.style.top = positionToNumber(sdStyle.top) - 400 + 'px';
-      beam.style.left = positionToNumber(sdStyle.left) - window.innerWidth/2 + 'px';
+      beam.style.left = positionToNumber(sdStyle.left) - 700 + 'px';
       sdStyle.top = positionToNumber(sdStyle.top) - 2 + 'px';
       if (positionToNumber(sdStyle.top) < 0) {
         moveDown();
@@ -414,16 +459,20 @@ function handleStardestroyer(stardestroyer) {
 
 function tractorBeam(stardestroyer, beamDuration, beamPulse) {
   const xwing = document.getElementById('xwing');
-
+  
   function pull(topOrLeft, plusOrMinus) {
     let clearCondition;
     
     const beamInterval = setInterval(() => {
+      if (stardestroyerHPs[stardestroyer.id.split(':')[1]] < 0) {
+        clearInterval(beamInterval);
+      }
+      saveXwingPosition(xwing.style);
       plusOrMinus > 0 
       ? clearCondition = positionToNumber(stardestroyer.style[topOrLeft]) < positionToNumber(xwing.style[topOrLeft])
       : clearCondition = positionToNumber(stardestroyer.style[topOrLeft]) > positionToNumber(xwing.style[topOrLeft])
       
-      xwing.style[topOrLeft] = positionToNumber(xwing.style[topOrLeft]) + plusOrMinus + 'px'
+      xwing.style[topOrLeft] = positionToNumber(xwing.style[topOrLeft]) + plusOrMinus + 'px';
       setTimeout(() => {
         clearInterval(beamInterval);
       }, beamDuration);
@@ -434,6 +483,10 @@ function tractorBeam(stardestroyer, beamDuration, beamPulse) {
   }
 
   const beamPause = setInterval(() => {
+    if (stardestroyerHPs[stardestroyer.id.split(':')[1]] < 0) {
+      clearInterval(beamPause);
+    }
+
     if (positionToNumber(stardestroyer.style.left) > positionToNumber(xwing.style.left)) {
       pull('left', 0.5);
     } else {
@@ -447,13 +500,55 @@ function tractorBeam(stardestroyer, beamDuration, beamPulse) {
   }, beamPulse)
 }
 
-function createStardestroyer() {
-  const stardestroyer = appendElement(root, 'img', 'stradestroyer', null, {src: './images/stardestroyer.png', id: 'stardestroyer'});
+function createStardestroyer(startingHeight) {
+  const stardestroyer = appendElement(root, 'img', 'stardestroyer', null, {src: './images/stardestroyer.png', id: `sd:${stardestroyerHPs.length}`});
+  stardestroyerHPs.push(1);
   let sdStyle = stardestroyer.style;
+  startingHeight ? sdStyle.top = startingHeight + 'px' : null;
   sdStyle.height = '100px';
   sdStyle.position = 'fixed';
   sdStyle.left = window.innerWidth/2 + 'px';
   handleStardestroyer(stardestroyer);
+}
+
+function shootRocket(shuttle, xwing) {
+  const rocket = appendElement(root, 'img', 'rocket', null, {src: './images/rocket.png'});
+  rocket.style.height = '8px';
+  rocket.style.position = 'fixed';
+  rocket.style.top = positionToNumber(shuttle.style.top) + 55 + 'px';
+  rocket.style.left = positionToNumber(shuttle.style.left) + 40 + 'px';
+  let counter = 0.0001;
+  const horizontal = setInterval(() => {
+    counter = counter * 1.015;
+    rocket.style.left = positionToNumber(rocket.style.left) - 1 - counter + 'px';
+    if (positionToNumber(rocket.style.left) < 0) {
+      clearInterval(horizontal);
+      rocket.remove();
+    }
+  }, 10);
+  const vertical = setInterval(() => {
+    if (positionToNumber(rocket.style.top) > positionToNumber(xwing.style.top) + 40) {
+      rocket.style.top = positionToNumber(rocket.style.top) - 0.5 + 'px';
+    } else {
+      rocket.style.top = positionToNumber(rocket.style.top) + 0.5 + 'px';
+    }
+    if (positionToNumber(rocket.style.left) < 0) {
+      clearInterval(vertical);
+      rocket.remove();
+    }
+  }, 10);
+}
+
+function createShuttle() {
+  const xwing = document.getElementById('xwing')
+  const shuttle = appendElement(root, 'img', 'shuttle', null, {src: './images/shuttle.png'});
+  let shuttleStyle = shuttle.style;
+  shuttleStyle.height = '80px';
+  shuttleStyle.position = 'fixed';
+  shuttleStyle.left = window.innerWidth - 150 + 'px';
+  const rocketsInterval = setInterval(() => {
+    shootRocket(shuttle, xwing);
+  }, 2000);
 }
 
 function main() {
@@ -462,11 +557,13 @@ function main() {
   const lives = appendElement(infoBar, 'div', 'lives', null, {id: 'lives'});
   displayLives();
   const xwing = appendElement(root, 'img', 'xWing', null, {src: './images/XWingright.png', id: 'xwing'});
-  createStardestroyer();
+  createShuttle();
+  // createStardestroyer();
+  // createStardestroyer(100);
   // const deathstar = appendElement(root, 'img', 'deathStar', null, {src: './images/deathstar.png', id: 'deathstar'});
   // moveDeathstar(deathstar);
-  createTieFighters(0, 0.5, 1, 2000, 2000);
-  createTieFighters(window.innerHeight-50, 0.5, 1, 2000, 2000);
+  // createTieFighters(0, 0.5, 1, 2000, 2000);
+  // createTieFighters(window.innerHeight-50, 0.5, 1, 2000, 2000);
   // createTieFighter(0, 0.1, 1, 300);
   controlXwing(xwing);
 }
